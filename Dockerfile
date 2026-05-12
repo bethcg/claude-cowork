@@ -1,14 +1,9 @@
-# Use the VSCodium base image (Ubuntu-based)
+# Base image with VSCodium accessible via Web UI (Port 3000)
 FROM lscr.io/linuxserver/vscodium:latest
 
-# Set environment variables
-ENV PUID=1000
-ENV PGID=1000
-ENV TZ=UTC
-
-# Install Python and essential build tools
+# 1. Install Python and Build Essentials
 RUN \
-  echo "**** install python and build tools ****" && \
+  echo "**** install python and dependencies ****" && \
   apt-get update && \
   apt-get install -y \
     python3 \
@@ -21,17 +16,18 @@ RUN \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code CLI 
-RUN \
-  echo "**** install claude code cli ****" && \
-  curl -fsSL https://claude.ai/install.sh | bash
+# 2. Install Claude Code (CLI version)
+# This provides the 'claude' command in the terminal
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Install the Claude Code extension for VSCodium
-# Note: We use the codium command to install extensions from the Open VSX registry
+# 3. Pre-install VS Code Extensions
+# anthropic.claude-code: The Claude Dev/Cowork extension
+# ms-python.python: Standard Python support
 RUN \
-  sudo -u abc codium --install-extension anthropic.claude-code
+  /usr/bin/codium --install-extension anthropic.claude-code && \
+  /usr/bin/codium --install-extension ms-python.python
 
-# Working directory
+# Workspace setup
 WORKDIR /config/workspace
 
 # Expose the web UI port
