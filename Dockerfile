@@ -1,9 +1,11 @@
-# Base image with VSCodium accessible via Web UI (Port 3000)
+# Base image with VSCodium
 FROM lscr.io/linuxserver/vscodium:latest
 
-# 1. Install Python and Build Essentials
+# 1. Install Dependencies
+# Note: Removed 'npm' from the list as 'nodejs' usually provides it or conflicts 
+# We also ensure build-essential is there for Claude Code native modules
 RUN \
-  echo "**** install python and dependencies ****" && \
+  echo "**** install python and node dependencies ****" && \
   apt-get update && \
   apt-get install -y \
     python3 \
@@ -11,14 +13,16 @@ RUN \
     python3-venv \
     curl \
     git \
-    nodejs \
-    npm && \
+    build-essential \
+    nodejs && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
 # 2. Install Claude Code (CLI version)
-# This provides the 'claude' command in the terminal
-RUN curl -fsSL https://claude.ai/install.sh | bash
+# We use -f to force if needed, and ensure npm is actually available
+RUN \
+  if ! command -v npm >/dev/null; then apt-get update && apt-get install -y npm; fi && \
+  curl -fsSL https://claude.ai/install.sh | sh
 
 # 3. Pre-install VS Code Extensions
 # anthropic.claude-code: The Claude Dev/Cowork extension
@@ -27,8 +31,6 @@ RUN \
   /usr/bin/codium --install-extension anthropic.claude-code && \
   /usr/bin/codium --install-extension ms-python.python
 
-# Workspace setup
 WORKDIR /config/workspace
 
-# Expose the web UI port
 EXPOSE 3000
